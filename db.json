@@ -1,0 +1,21 @@
+{
+  "users": [
+    {
+      "username": "Anderson",
+      "password": "33c0ebf44121d4a2bbb72b42925bdec7b5d4a89081b36839860cbc92258ce2d3"
+    }
+  ],
+  "alunos": [
+    {
+      "nome": "Anderson Luiz da Silva Júnior",
+      "idade": "16",
+      "sexo": "Masculino",
+      "faixaSalarial": "Até 1 salário mínimo",
+      "necessidadeApoio": "Não possui",
+      "observacoes": "Nenhuma",
+      "codigo": "WLE-9311"
+    }
+  ],
+  "historico": {},
+  "chat": []
+}

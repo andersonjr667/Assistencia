@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Aluno</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: linear-gradient(120deg, #e3f0ff 0%, #b6d0f7 100%); }
+        .consulta-card {
+            max-width: 400px;
+            margin: 10vh auto;
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 0 20px #0001;
+            padding: 2rem;
+        }
+        .consulta-card h1 { color: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="consulta-card">
+        <div class="d-flex justify-content-end mb-3 gap-2" id="login-btn-container">
+            <button class="btn btn-outline-primary" id="login-btn" style="display:none;">Login</button>
+        </div>
+        <div id="user-info" class="text-end mb-2"></div>
+        <h1 class="mb-4 text-center">Consultar Ficha do Aluno</h1>
+        <form id="consulta-form">
+            <div class="mb-3">
+                <label for="codigo-aluno" class="form-label">Código do Aluno</label>
+                <input type="text" class="form-control" id="codigo-aluno" required placeholder="Ex: ABC-1234">
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary w-100">Pesquisar</button>
+            </div>
+        </form>
+        <div id="consulta-erro" class="text-danger mt-2 d-none"></div>
+        <div id="ficha-aluno" class="mt-4 d-none"></div>
+        <div class="text-center mt-4">
+            <a href="index.html" class="btn btn-outline-primary">Ir para página do RH</a>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Não carregar script.js para não conflitar com handlers locais -->
+    <script>
+    // Exibe usuário logado e botão sair, se houver
+    function renderUserInfo() {
+        const userDiv = document.getElementById('user-info');
+        const loginBtnContainer = document.getElementById('login-btn-container');
+        const loginBtn = document.getElementById('login-btn');
+        const user = localStorage.getItem('usuarioLogado');
+        if (user) {
+            userDiv.innerHTML = `<span class='fw-bold text-primary'>Usuário: ${user}</span> <button class='btn btn-outline-danger btn-sm ms-2' id='logout-btn'>Sair</button>`;
+            // Esconde o botão de login
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (loginBtnContainer) loginBtnContainer.style.display = '';
+            document.getElementById('logout-btn').onclick = function() {
+                localStorage.removeItem('usuarioLogado');
+                window.location.reload();
+            };
+        } else {
+            userDiv.innerHTML = '';
+            if (loginBtn) loginBtn.style.display = '';
+            if (loginBtnContainer) loginBtnContainer.style.display = '';
+        }
+    }
+    renderUserInfo();
+
+    // Modal login igual index.html
+    document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="loginModalLabel">Login</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="login-form">
+              <div class="mb-3">
+                <label for="login-username" class="form-label">Usuário</label>
+                <input type="text" class="form-control" id="login-username" required autocomplete="username">
+              </div>
+              <div class="mb-3">
+                <label for="login-password" class="form-label">Senha</label>
+                <input type="password" class="form-control" id="login-password" required autocomplete="current-password">
+              </div>
+              <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">Entrar</button>
+              </div>
+            </form>
+            <div id="login-error" class="text-danger mt-2 d-none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    `);
+
+    // Ativa modal e handler igual index.html
+    const loginBtn = document.getElementById('login-btn');
+    let loginModal;
+    setTimeout(() => {
+      loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+      loginBtn.addEventListener('click', () => {
+          document.getElementById('login-error').classList.add('d-none');
+          document.getElementById('login-form').reset();
+          loginModal.show();
+      });
+      document.getElementById('login-form').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const username = document.getElementById('login-username').value.trim();
+          const password = document.getElementById('login-password').value;
+          const errorDiv = document.getElementById('login-error');
+          errorDiv.classList.add('d-none');
+          try {
+              const res = await fetch('http://localhost:3000/api/login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ username, password })
+              });
+              const data = await res.json();
+              if (res.ok) {
+                  localStorage.setItem('usuarioLogado', username);
+                  window.location.href = 'index.html';
+              } else {
+                  errorDiv.textContent = data.error || 'Erro ao fazer login.';
+                  errorDiv.classList.remove('d-none');
+              }
+          } catch (err) {
+              errorDiv.textContent = 'Erro de conexão com o servidor.';
+              errorDiv.classList.remove('d-none');
+          }
+      });
+    }, 100);
+
+    // Consulta aluno
+    document.getElementById('consulta-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const codigo = document.getElementById('codigo-aluno').value.trim().toUpperCase();
+        const erroDiv = document.getElementById('consulta-erro');
+        const fichaDiv = document.getElementById('ficha-aluno');
+        erroDiv.classList.add('d-none');
+        fichaDiv.classList.add('d-none');
+        fichaDiv.innerHTML = '';
+        try {
+            const res = await fetch('http://localhost:3000/api/alunos');
+            const alunos = await res.json();
+            const aluno = alunos.find(a => (a.codigo || '').toUpperCase() === codigo);
+            if (!aluno) {
+                erroDiv.textContent = 'Código não encontrado.';
+                erroDiv.classList.remove('d-none');
+                return;
+            }
+            // Buscar histórico
+            let historico = [];
+            try {
+                const idx = alunos.findIndex(a => (a.codigo || '').toUpperCase() === codigo);
+                if (idx >= 0) {
+                    const resHist = await fetch(`http://localhost:3000/api/historico/${idx}`);
+                    historico = await resHist.json();
+                }
+            } catch {}
+            fichaDiv.innerHTML = `
+                <div class='card p-3'>
+                    <h5 class='mb-3 text-primary'>Ficha do Aluno</h5>
+                    <dl class='row mb-0'>
+                        <dt class='col-5'>Nome</dt><dd class='col-7'>${aluno.nome}</dd>
+                        <dt class='col-5'>Idade</dt><dd class='col-7'>${aluno.idade}</dd>
+                        <dt class='col-5'>Sexo</dt><dd class='col-7'>${aluno.sexo}</dd>
+                        <dt class='col-5'>Faixa Salarial</dt><dd class='col-7'>${aluno.faixaSalarial}</dd>
+                        <dt class='col-5'>Necessidade de Apoio</dt><dd class='col-7'>${aluno.necessidadeApoio}</dd>
+                        <dt class='col-5'>Observações</dt><dd class='col-7'>${aluno.observacoes}</dd>
+                        <dt class='col-5'>Código</dt><dd class='col-7'>${aluno.codigo}</dd>
+                    </dl>
+                    <hr>
+                    <h6 class='mb-2 text-secondary'>Histórico de Acompanhamento</h6>
+                    <ul class='list-group mb-0'>
+                        ${(historico && historico.length) ? historico.map(h => `<li class='list-group-item'>${h}</li>`).join('') : '<li class="list-group-item text-muted">Nenhum comentário.</li>'}
+                    </ul>
+                </div>
+            `;
+            fichaDiv.classList.remove('d-none');
+        } catch (err) {
+            erroDiv.textContent = 'Erro ao consultar. Tente novamente.';
+            erroDiv.classList.remove('d-none');
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+body {
+    background: linear-gradient(120deg, #e3f0ff 0%, #b6d0f7 100%);
+    min-height: 100vh;
+}
+
+h1 {
+    font-weight: 700;
+    color: #2563eb;
+}
+
+.card {
+    border-radius: 1rem;
+}
+
+#cadastro-form {
+    background: #fff;
+    border: none;
+}
+
+#alunos-table th, #alunos-table td {
+    vertical-align: middle;
+    text-align: center;
+}
+
+#alunos-table thead {
+    background: #2563eb;
+    color: #fff;
+}
+
+#alunos-table tbody tr {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#alunos-table tbody tr:hover {
+    background: #e0eaff;
+}
+
+#detalhe-view .card {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+#voltar-btn {
+    font-size: 0.95rem;
+}
+
+/* Botões principais */
+.btn-primary, .btn-success {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+.btn-primary:hover, .btn-success:hover {
+    background: #174bbd;
+    border-color: #174bbd;
+}
+.btn-outline-primary {
+    color: #2563eb;
+    border-color: #2563eb;
+}
+.btn-outline-primary:hover {
+    background: #2563eb;
+    color: #fff;
+}
+.btn-outline-success {
+    color: #2563eb;
+    border-color: #2563eb;
+}
+.btn-outline-success:hover {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem 0.5rem;
+    }
+    #detalhe-view .card {
+        max-width: 100%;
+    }
+}
