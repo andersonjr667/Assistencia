@@ -11,6 +11,7 @@
     <div class="container py-5">
         <div class="d-flex justify-content-end mb-3 gap-2">
             <a href="consulta-aluno.html" class="btn btn-outline-info">Fazer Busca (Aluno)</a>
+            <a href="pagamentos.html" class="btn btn-outline-warning">Pagamentos</a>
             <button class="btn btn-outline-primary" id="login-btn">Login</button>
             <button class="btn btn-outline-success" id="register-btn">Registrar</button>
         </div>
@@ -20,20 +21,44 @@
                 <h2 class="mb-3">Novo Cadastro</h2>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="nome" class="form-label">Nome</label>
+                        <label for="nome" class="form-label">Nome do Aluno</label>
                         <input type="text" class="form-control" id="nome" required>
                     </div>
-                    <div class="col-md-2">
-                        <label for="idade" class="form-label">Idade</label>
-                        <input type="number" class="form-control" id="idade" min="0" required>
+                    <div class="col-md-6">
+                        <label for="nomeMae" class="form-label">Nome da Mãe</label>
+                        <input type="text" class="form-control" id="nomeMae" required>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
+                        <label for="nomePai" class="form-label">Nome do Pai</label>
+                        <input type="text" class="form-control" id="nomePai">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="dataNascimento" class="form-label">Data de Nascimento</label>
+                        <input type="date" class="form-control" id="dataNascimento" required>
+                    </div>
+                    <div class="col-md-3">
                         <label for="sexo" class="form-label">Sexo</label>
                         <select class="form-select" id="sexo" required>
                             <option value="">Selecione</option>
                             <option value="Masculino">Masculino</option>
                             <option value="Feminino">Feminino</option>
                             <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="escola" class="form-label">Escola</label>
+                        <input type="text" class="form-control" id="escola" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="serie" class="form-label">Série</label>
+                        <input type="text" class="form-control" id="serie" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="deficiencia" class="form-label">Possui alguma deficiência?</label>
+                        <select class="form-select" id="deficiencia" required>
+                            <option value="">Selecione</option>
+                            <option value="Não">Não</option>
+                            <option value="Sim">Sim</option>
                         </select>
                     </div>
                     <div class="col-md-6">
@@ -45,10 +70,6 @@
                             <option value="2 a 3 salários mínimos">2 a 3 salários mínimos</option>
                             <option value="Acima de 3 salários mínimos">Acima de 3 salários mínimos</option>
                         </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="necessidadeApoio" class="form-label">Necessidade de Apoio</label>
-                        <input type="text" class="form-control" id="necessidadeApoio" required>
                     </div>
                     <div class="col-12">
                         <label for="observacoes" class="form-label">Observações</label>
@@ -72,7 +93,13 @@
                                     <th>Idade</th>
                                     <th>Sexo</th>
                                     <th>Faixa Salarial</th>
-                                    <th>Necessidade de Apoio</th>
+
+                                    <th>Escola</th>
+                                    <th>Série</th>
+                                    <th>Deficiência</th>
+                                    <th>Data Nasc.</th>
+                                    <th>Nome Mãe</th>
+                                    <th>Nome Pai</th>
                                     <th>Observações</th>
                                 </tr>
                             </thead>
@@ -163,5 +190,88 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
+    <script>
+    // Atualiza a tabela de alunos para exibir os novos campos
+    window.renderTabela = async function() {
+        const tbody = document.querySelector('#alunos-table tbody');
+        tbody.innerHTML = '';
+        if (!window.isLoggedIn || !isLoggedIn()) return;
+        const alunos = await fetch('http://localhost:3000/api/alunos').then(r => r.json());
+        alunos.forEach(aluno => {
+            const tr = document.createElement('tr');
+            const idade = aluno.dataNascimento ? calcularIdade(aluno.dataNascimento) : '';
+            tr.innerHTML = `
+                <td>${aluno.nome}</td>
+                <td>${idade}</td>
+                <td>${aluno.sexo || ''}</td>
+                <td>${aluno.faixaSalarial || ''}</td>
+
+                <td>${aluno.escola || ''}</td>
+                <td>${aluno.serie || ''}</td>
+                <td>${aluno.deficiencia || ''}</td>
+                <td>${aluno.dataNascimento || ''}</td>
+                <td>${aluno.nomeMae || ''}</td>
+                <td>${aluno.nomePai || ''}</td>
+                <td>${aluno.observacoes || ''}</td>
+            `;
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', () => mostrarFichaAluno(aluno));
+            tbody.appendChild(tr);
+        });
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+        if (window.renderTabela) renderTabela();
+    });
+    // Função para calcular idade a partir da data de nascimento
+    function calcularIdade(dataNasc) {
+        const hoje = new Date();
+        const nasc = new Date(dataNasc);
+        let idade = hoje.getFullYear() - nasc.getFullYear();
+        const m = hoje.getMonth() - nasc.getMonth();
+        if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) {
+            idade--;
+        }
+        return idade;
+    }
+    // Exibe ficha do aluno em um modal ao clicar na linha
+    window.mostrarFichaAluno = function(aluno) {
+        let detalhes = `<strong>Nome:</strong> ${aluno.nome}<br>`;
+        detalhes += `<strong>Mãe:</strong> ${aluno.nomeMae || '-'}<br>`;
+        detalhes += `<strong>Pai:</strong> ${aluno.nomePai || '-'}<br>`;
+        detalhes += `<strong>Data de Nascimento:</strong> ${aluno.dataNascimento || '-'}<br>`;
+        detalhes += `<strong>Sexo:</strong> ${aluno.sexo || '-'}<br>`;
+        detalhes += `<strong>Escola:</strong> ${aluno.escola || '-'}<br>`;
+        detalhes += `<strong>Série:</strong> ${aluno.serie || '-'}<br>`;
+        detalhes += `<strong>Deficiência:</strong> ${aluno.deficiencia || '-'}<br>`;
+        detalhes += `<strong>Faixa Salarial:</strong> ${aluno.faixaSalarial || '-'}<br>`;
+        detalhes += `<strong>Observações:</strong> ${aluno.observacoes || '-'}<br>`;
+        detalhes += `<strong>Código:</strong> ${aluno.codigo || '-'}<br>`;
+        showModal('Ficha do Aluno', detalhes);
+    }
+    function showModal(titulo, conteudo) {
+        let modal = document.getElementById('fichaAlunoModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.id = 'fichaAlunoModal';
+            modal.tabIndex = -1;
+            modal.innerHTML = `
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title"></h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body"></div>
+                  </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+        modal.querySelector('.modal-title').innerHTML = titulo;
+        modal.querySelector('.modal-body').innerHTML = conteudo;
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    }
+    </script>
 </body>
 </html>

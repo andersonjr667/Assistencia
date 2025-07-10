@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagamentos - Assistência Social</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="user-info" class="text-end mb-2"></div>
+    <div class="container py-5" id="main-pagamentos">
+        <div class="d-flex justify-content-end mb-3 gap-2">
+            <a href="index.html" class="btn btn-outline-primary">Cadastro</a>
+            <a href="consulta-aluno.html" class="btn btn-outline-info">Busca</a>
+        </div>
+        <h1 class="mb-4 text-center">Controle de Pagamentos</h1>
+        <div class="card shadow">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="pagamentos-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nome do Aluno</th>
+                                <th>Faixa Salarial</th>
+                                <th>Escola</th>
+                                <th>Pai/Mãe</th>
+                                <th>Status de Pagamento</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dados inseridos via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modais de Login e Registro (copiados do index.html) -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="loginModalLabel">Login</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="login-form">
+              <div class="mb-3">
+                <label for="login-username" class="form-label">Usuário</label>
+                <input type="text" class="form-control" id="login-username" required>
+              </div>
+              <div class="mb-3">
+                <label for="login-password" class="form-label">Senha</label>
+                <input type="password" class="form-control" id="login-password" required>
+              </div>
+              <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">Entrar</button>
+              </div>
+            </form>
+            <div id="login-error" class="text-danger mt-2 d-none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="registerModalLabel">Registrar</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="register-form">
+              <div class="mb-3">
+                <label for="register-username" class="form-label">Usuário</label>
+                <input type="text" class="form-control" id="register-username" required>
+              </div>
+              <div class="mb-3">
+                <label for="register-password" class="form-label">Senha</label>
+                <input type="password" class="form-control" id="register-password" required>
+              </div>
+              <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-success">Registrar</button>
+              </div>
+            </form>
+            <div id="register-error" class="text-danger mt-2 d-none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+    <script>
+    // Garante que o login funcione em pagamentos.html mesmo sem botões visíveis
+    window.addEventListener('DOMContentLoaded', () => {
+        // Inicializa modais se não existirem
+        if (typeof bootstrap !== 'undefined') {
+            if (!window.loginModal && document.getElementById('loginModal')) {
+                window.loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+            }
+            if (!window.registerModal && document.getElementById('registerModal')) {
+                window.registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+            }
+        }
+        if (typeof exibirUsuarioLogado === 'function') exibirUsuarioLogado();
+
+        // Corrige escopo dos botões e modais para funcionar no pagamentos.html
+        window.loginBtn = document.getElementById('login-btn') || { click: function() { window.loginModal && window.loginModal.show(); } };
+        window.registerBtn = document.getElementById('register-btn') || { click: function() { window.registerModal && window.registerModal.show(); } };
+        // Garante que o submit do login funcione mesmo sem botões visíveis
+        const loginForm = document.getElementById('login-form');
+        if (loginForm && !loginForm.hasAttribute('data-patched')) {
+            loginForm.setAttribute('data-patched', 'true');
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const username = document.getElementById('login-username').value.trim();
+                const password = document.getElementById('login-password').value;
+                const errorDiv = document.getElementById('login-error');
+                errorDiv.classList.add('d-none');
+                try {
+                    const res = await fetch('http://localhost:3000/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    let data = {};
+                    try { data = await res.json(); } catch(e){}
+                    if (res.ok) {
+                        localStorage.setItem('usuarioLogado', username);
+                        if (typeof exibirUsuarioLogado === 'function') exibirUsuarioLogado();
+                        window.loginModal.hide();
+                        setTimeout(() => {
+                            window.location.hash = '';
+                            window.location.reload();
+                        }, 300);
+                    } else {
+                        errorDiv.textContent = (data && data.error) ? data.error : 'Usuário ou senha inválidos.';
+                        errorDiv.classList.remove('d-none');
+                    }
+                } catch (err) {
+                    errorDiv.textContent = 'Erro de conexão com o servidor.';
+                    errorDiv.classList.remove('d-none');
+                }
+            });
+        }
+    });
+    </script>
+    <script>
+    // Proteção: só mostra se estiver logado
+    window.addEventListener('DOMContentLoaded', () => {
+        if (!localStorage.getItem('usuarioLogado')) {
+            document.getElementById('main-pagamentos').style.display = 'none';
+            // Mostra o modal de login imediatamente
+            setTimeout(() => {
+                const modalEl = document.getElementById('loginModal');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                    const loginModalInstance = new bootstrap.Modal(modalEl);
+                    loginModalInstance.show();
+                    // Foco no campo usuário
+                    setTimeout(() => {
+                        const userInput = document.getElementById('login-username');
+                        if (userInput) userInput.focus();
+                    }, 300);
+                    // Garante que o modal fique visível mesmo se o usuário fechar
+                    modalEl.addEventListener('hidden.bs.modal', () => {
+                        if (!localStorage.getItem('usuarioLogado')) {
+                            setTimeout(() => loginModalInstance.show(), 200);
+                        }
+                    });
+                }
+            }, 200);
+        } else {
+            document.getElementById('main-pagamentos').style.display = '';
+        }
+    });
+    // Integração real com backend (Node.js)
+    async function carregarPagamentos() {
+        try {
+            const res = await fetch('http://localhost:3000/api/alunos');
+            const alunos = await res.json();
+            const tbody = document.querySelector('#pagamentos-table tbody');
+            tbody.innerHTML = '';
+            alunos.forEach(aluno => {
+                let status = '';
+                if (aluno.statusPagamento === 'Pago' && aluno.mes === obterMesAtual()) {
+                    status = `<span class='badge bg-success'>Pago</span>`;
+                } else {
+                    const hoje = new Date();
+                    const vencimento = new Date(hoje.getFullYear(), hoje.getMonth(), 10);
+                    let dataVenc = vencimento;
+                    if (hoje > vencimento) {
+                        // Se já passou do dia 10, mostra o próximo mês
+                        dataVenc = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 10);
+                    }
+                    const dia = dataVenc.getDate().toString().padStart(2, '0');
+                    const mes = (dataVenc.getMonth() + 1).toString().padStart(2, '0');
+                    const ano = dataVenc.getFullYear();
+                    status = `<span class='badge bg-danger'>Pendente ${dia}/${mes}/${ano}</span>`;
+                }
+                tbody.innerHTML += `<tr>
+                    <td>${aluno.nome}</td>
+                    <td>${aluno.faixaSalarial || ''}</td>
+                    <td>${aluno.escola || ''}</td>
+                    <td>${aluno.nomePai ? aluno.nomePai : (aluno.nomeMae || '-')}</td>
+                    <td>${status}</td>
+                    <td>
+                        <button class="btn btn-sm btn-success mb-1" onclick="efetuarPagamento('${aluno.codigo}')">Pagamento Efetuado</button><br>
+                        <button class="btn btn-sm btn-info" onclick="verDetalhesAluno('${aluno.codigo}')">Ver Dados</button>
+                    </td>
+                </tr>`;
+            });
+        } catch (e) {
+            document.querySelector('#pagamentos-table tbody').innerHTML = '<tr><td colspan="5" class="text-danger">Erro ao carregar dados.</td></tr>';
+        }
+    }
+    carregarPagamentos();
+    // Exibe detalhes do aluno em um modal
+    window.verDetalhesAluno = function(codigo) {
+        fetch('http://localhost:3000/api/alunos')
+            .then(res => res.json())
+            .then(alunos => {
+                const aluno = alunos.find(a => a.codigo === codigo);
+                if (!aluno) return alert('Aluno não encontrado!');
+                let detalhes = `<strong>Nome:</strong> ${aluno.nome}<br>`;
+                detalhes += `<strong>Mãe:</strong> ${aluno.nomeMae || '-'}<br>`;
+                detalhes += `<strong>Pai:</strong> ${aluno.nomePai || '-'}<br>`;
+                detalhes += `<strong>Data de Nascimento:</strong> ${aluno.dataNascimento || '-'}<br>`;
+                detalhes += `<strong>Sexo:</strong> ${aluno.sexo || '-'}<br>`;
+                detalhes += `<strong>Escola:</strong> ${aluno.escola || '-'}<br>`;
+                detalhes += `<strong>Série:</strong> ${aluno.serie || '-'}<br>`;
+                detalhes += `<strong>Deficiência:</strong> ${aluno.deficiencia || '-'}<br>`;
+                detalhes += `<strong>Faixa Salarial:</strong> ${aluno.faixaSalarial || '-'}<br>`;
+                detalhes += `<strong>Observações:</strong> ${aluno.observacoes || '-'}<br>`;
+                detalhes += `<strong>Status Pagamento:</strong> ${aluno.statusPagamento || 'Pendente'}<br>`;
+                detalhes += aluno.mes ? `<strong>Mês Quitado:</strong> ${aluno.mes}<br>` : '';
+                showModal('Detalhes do Aluno', detalhes);
+            });
+    }
+
+    // Função utilitária para mostrar modal simples
+    function showModal(titulo, conteudo) {
+        let modal = document.getElementById('detalheAlunoModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.id = 'detalheAlunoModal';
+            modal.tabIndex = -1;
+            modal.innerHTML = `
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title"></h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body"></div>
+                  </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+        modal.querySelector('.modal-title').innerHTML = titulo;
+        modal.querySelector('.modal-body').innerHTML = conteudo;
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    }
+    // Função para marcar pagamento como efetuado
+    async function efetuarPagamento(codigo) {
+        try {
+            await fetch(`http://localhost:3000/api/alunos/pagamento/${codigo}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ statusPagamento: 'Pago', mes: obterMesAtual() })
+            });
+            carregarPagamentos();
+        } catch (e) {
+            alert('Erro ao atualizar pagamento.');
+        }
+    }
+
+    // Função para obter o mês atual no formato "MM/YYYY"
+    function obterMesAtual() {
+        const d = new Date();
+        return (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
+    }
+    </script>
+</body>
+</html>

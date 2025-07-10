@@ -29,28 +29,7 @@ async function addHistoricoAPI(idx, comentario) {
 }
 
 
-async function renderTabela() {
-    const tbody = document.querySelector('#alunos-table tbody');
-    tbody.innerHTML = '';
-    if (!isLoggedIn()) {
-        // Não mostra nada se não estiver logado
-        return;
-    }
-    const alunos = await getAlunosAPI();
-    alunos.forEach((aluno, idx) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${aluno.nome}</td>
-            <td>${aluno.idade}</td>
-            <td>${aluno.sexo}</td>
-            <td>${aluno.faixaSalarial}</td>
-            <td>${aluno.necessidadeApoio}</td>
-            <td>${aluno.observacoes}</td>
-        `;
-        tr.addEventListener('click', () => mostrarDetalhe(idx));
-        tbody.appendChild(tr);
-    });
-}
+
 
 
 async function gerarCodigoAluno() {
@@ -77,10 +56,14 @@ document.getElementById('cadastro-form').addEventListener('submit', async functi
     }
     const aluno = {
         nome: document.getElementById('nome').value.trim(),
-        idade: document.getElementById('idade').value.trim(),
+        nomeMae: document.getElementById('nomeMae').value.trim(),
+        nomePai: document.getElementById('nomePai').value.trim(),
+        dataNascimento: document.getElementById('dataNascimento').value,
         sexo: document.getElementById('sexo').value,
+        escola: document.getElementById('escola').value.trim(),
+        serie: document.getElementById('serie').value.trim(),
+        deficiencia: document.getElementById('deficiencia').value,
         faixaSalarial: document.getElementById('faixaSalarial').value,
-        necessidadeApoio: document.getElementById('necessidadeApoio').value.trim(),
         observacoes: document.getElementById('observacoes').value.trim(),
         codigo: await gerarCodigoAluno()
     };
@@ -95,23 +78,42 @@ document.getElementById('cadastro-form').addEventListener('submit', async functi
     setTimeout(() => div.remove(), 2500);
 });
 // Melhoria 4: Mostrar usuário logado e botão de logout mais visível (sem duplicar)
-window.addEventListener('DOMContentLoaded', () => {
+
+// Função para garantir exibição do usuário logado no topo de todas as páginas
+function exibirUsuarioLogado() {
+    let userDiv = document.getElementById('user-info');
+    if (!userDiv) {
+        // Cria o elemento se não existir
+        userDiv = document.createElement('div');
+        userDiv.id = 'user-info';
+        userDiv.style = 'position:fixed;top:0;right:0;z-index:9999;padding:8px 16px;background:#fff;border-bottom-left-radius:8px;box-shadow:0 2px 8px #0001;';
+        document.body.appendChild(userDiv);
+    }
     if (isLoggedIn()) {
         const user = localStorage.getItem('usuarioLogado');
-        let userDiv = document.getElementById('user-info');
-        if (!userDiv) {
-            userDiv = document.createElement('div');
-            userDiv.id = 'user-info';
-            userDiv.className = 'text-end mb-2';
-            document.querySelector('.container').insertBefore(userDiv, document.querySelector('.container').firstChild);
-        }
-        // Evita duplicidade
-        if (!userDiv.innerHTML.includes('Usuário:')) {
-            userDiv.innerHTML = `<span class='fw-bold text-primary'>Usuário: ${user}</span> <button class='btn btn-outline-danger btn-sm ms-2' onclick='logout()'>Sair</button>`;
-        }
+        userDiv.innerHTML = `<span class='fw-bold text-primary'>Usuário: ${user}</span> <button class='btn btn-outline-danger btn-sm ms-2' onclick='logout()'>Sair</button>`;
+        userDiv.style.display = '';
     } else {
-        const userDiv = document.getElementById('user-info');
-        if (userDiv) userDiv.remove();
+        userDiv.style.display = 'none';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    exibirUsuarioLogado();
+    const mainView = document.getElementById('main-view');
+    const detalheView = document.getElementById('detalhe-view');
+    // Se não estiver logado, mostra só o modal de login
+    if (!isLoggedIn()) {
+        if (mainView) mainView.style.display = 'none';
+        if (detalheView) detalheView.style.display = 'none';
+        // Abre modal de login automaticamente
+        setTimeout(() => {
+            if (typeof loginModal !== 'undefined') loginModal.show();
+            else if (document.getElementById('login-btn')) document.getElementById('login-btn').click();
+        }, 200);
+    } else {
+        if (mainView) mainView.style.display = '';
+        if (detalheView) detalheView.style.display = '';
     }
 });
 
@@ -128,7 +130,6 @@ async function mostrarDetalhe(idx) {
         <dt class="col-5">Idade</dt><dd class="col-7">${aluno.idade}</dd>
         <dt class="col-5">Sexo</dt><dd class="col-7">${aluno.sexo}</dd>
         <dt class="col-5">Faixa Salarial</dt><dd class="col-7">${aluno.faixaSalarial}</dd>
-        <dt class="col-5">Necessidade de Apoio</dt><dd class="col-7">${aluno.necessidadeApoio}</dd>
         <dt class="col-5">Observações</dt><dd class="col-7">${aluno.observacoes}</dd>
         <dt class="col-5">Código do Aluno</dt><dd class="col-7">${aluno.codigo || 'N/A'}</dd>
     `;
@@ -182,6 +183,7 @@ function setLoggedIn(username) {
 
 function logout() {
     localStorage.removeItem('usuarioLogado');
+    exibirUsuarioLogado();
     window.location.reload();
 }
 
@@ -238,6 +240,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
         const data = await res.json();
         if (res.ok) {
             setLoggedIn(username);
+            exibirUsuarioLogado();
             loginModal.hide();
             setTimeout(() => {
                 window.location.hash = '';

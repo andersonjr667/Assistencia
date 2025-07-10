@@ -8,14 +8,16 @@
   "alunos": [
     {
       "nome": "Anderson Luiz da Silva Júnior",
-      "idade": "16",
+      "nomeMae": "Verônica Magna da Silva",
+      "nomePai": "Anderson Luiz da Silva",
+      "dataNascimento": "2009-01-10",
       "sexo": "Masculino",
+      "escola": "Colégio Maximus",
+      "serie": "2a Série",
+      "deficiencia": "Não",
       "faixaSalarial": "Até 1 salário mínimo",
-      "necessidadeApoio": "Não possui",
       "observacoes": "Nenhuma",
-      "codigo": "WLE-9311"
+      "codigo": "GZY-1799"
     }
-  ],
-  "historico": {},
-  "chat": []
+  ]
 }
